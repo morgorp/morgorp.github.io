@@ -1,0 +1,968 @@
+<!doctype html>
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="aIIXZDz35JAx9yECqvZgZtf6emIovRKesXaAT8zlga8" />
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="R7FUky9G0N" />
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="C++," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="【左值引用 vs. 右值引用】、【拷贝语义 vs. 移动语义】、【拷贝构造函数 vs. 移动构造函数】、【拷贝赋值函数 vs. 移动赋值函数】。。">
+<meta name="keywords" content="C++">
+<meta property="og:type" content="article">
+<meta property="og:title" content="右值引用与移动语义">
+<meta property="og:url" content="http://progrom.cn/2017/08/08/rvalue-reference-and-move-semantic/index.html">
+<meta property="og:site_name" content="尽人事，听天命">
+<meta property="og:description" content="【左值引用 vs. 右值引用】、【拷贝语义 vs. 移动语义】、【拷贝构造函数 vs. 移动构造函数】、【拷贝赋值函数 vs. 移动赋值函数】。。">
+<meta property="og:updated_time" content="2017-08-08T10:41:17.955Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="右值引用与移动语义">
+<meta name="twitter:description" content="【左值引用 vs. 右值引用】、【拷贝语义 vs. 移动语义】、【拷贝构造函数 vs. 移动构造函数】、【拷贝赋值函数 vs. 移动赋值函数】。。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"right","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: false,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://progrom.cn/2017/08/08/rvalue-reference-and-move-semantic/"/>
+
+
+
+
+
+  <title> 右值引用与移动语义 | 尽人事，听天命 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?77f760bacf47c40266e44c0d4b68625f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">尽人事，听天命</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">随便写写</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://progrom.cn/2017/08/08/rvalue-reference-and-move-semantic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="progrom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="尽人事，听天命">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                右值引用与移动语义
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-08T18:38:32+08:00">
+                2017-08-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/08/08/rvalue-reference-and-move-semantic/" class="leancloud_visitors" data-flag-title="右值引用与移动语义">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数 </span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  【左值引用 vs. 右值引用】、【拷贝语义 vs. 移动语义】、【拷贝构造函数 vs. 移动构造函数】、【拷贝赋值函数 vs. 移动赋值函数】。。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <hr>
+<h2 id="左值引用-vs-右值引用">左值引用 vs. 右值引用</h2>
+<p>表达式表现的形式可以分为左值和右值，一般区分方法是左值表达式可以取地址，而右值不可以。</p>
+<p>但这不是说右值表达式就不存在于内存中，它们只不过以临时变量的形式短暂存在着，编译器处理了它们，对于一般程序员是透明的。</p>
+<p>比如：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> a = <span class="number">1</span> + <span class="number">2</span>;</div></pre></td></tr></table></figure></p>
+<p>这儿<code>a</code>显然表现为左值，而<code>1 + 2</code>则是右值，编译器可能做的处理大概像这样：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> temp = <span class="number">3</span>;</div><div class="line"><span class="keyword">int</span> a = temp;</div></pre></td></tr></table></figure></p>
+<p>左值引用就是常见的引用，它表示左值表达式的别名。而既然右值表达式是存在于内存的，那么所谓的<strong>右值引用</strong>就是右值表达式编译产生的临时变量的别名。比如：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">int</span> &amp;&amp;rval_ref = <span class="number">1</span> + <span class="number">2</span>;</div><div class="line"><span class="keyword">int</span> &amp;lval_ref = rval_ref;</div></pre></td></tr></table></figure></p>
+<p><code>rval_ref</code>就是右值引用，引用编译器为<code>1 + 2</code>创建的临时变量；而另一方面表达式<code>rval_ref</code>可以取地址，所以它是左值，于是可以看到<code>lval_ref</code>左值引用引用了这个变量。这两个变量的内存地址都是相同的。</p>
+<hr>
+<h2 id="拷贝语义-vs-移动语义">拷贝语义 vs. 移动语义</h2>
+<p>其实关于“移动语义”个人认为这就是个字面意思。</p>
+<p>所谓“语义”——</p>
+<blockquote>
+<p><em>数据的含义就是语义(semantic)。简单的说，数据就是符号。数据本身没有任何意义，只有被赋予含义的数据才能够被使用，这时候数据就转化为了信息，而数据的含义就是语义。语义可以简单地看作是数据所对应的现实世界中的事物所代表的概念的含义，以及这些含义之间的关系，是数据在某个领域上的解释和逻辑表示。</em> —— from 百度百科</p>
+</blockquote>
+<p>所谓的<strong>拷贝语义</strong>差不多就是将A的内容复制到B，A不变，而B的内容与A一模一样。</p>
+<p>所谓的<strong>移动语义</strong>差不多就是将A的内容移动到B，B的内容变成A，但A的内容没有了。</p>
+<p>根据各种常识可以知道，移动一般比拷贝更快。下面将看到什么时候需要用到拷贝，什么时候又需要用到移动，以及它们这两个语义的实现。</p>
+<hr>
+<h2 id="拷贝构造函数-vs-移动构造函数">拷贝构造函数 vs. 移动构造函数</h2>
+<p>对象初始化时会调用其构造函数，只有一个参数的构造函数也被称为<strong>转换构造函数</strong>，可以用来实现各式各样的初始化，比如：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Student</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line"></div><div class="line">	<span class="comment">/* 拷贝构造函数 */</span></div><div class="line">	Student(<span class="keyword">const</span> Student &amp;stu) &#123;</div><div class="line">		name = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="built_in">strlen</span>(stu.name) + <span class="number">1</span>];</div><div class="line">		<span class="built_in">strcpy</span>(name, stu.name);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	Student(<span class="keyword">char</span> *name) &#123;</div><div class="line">		<span class="keyword">this</span>-&gt;name = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="built_in">strlen</span>(name) + <span class="number">1</span>];</div><div class="line">		<span class="built_in">strcpy</span>(<span class="keyword">this</span>-&gt;name, name);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">    <span class="comment">/* 析构函数 */</span></div><div class="line">	~Student() &#123;</div><div class="line">		<span class="keyword">if</span> (name != <span class="literal">nullptr</span>) &#123;</div><div class="line">			<span class="keyword">delete</span>[] name;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">char</span> *<span class="title">get_name</span><span class="params">()</span> </span>&#123;</div><div class="line">		<span class="keyword">return</span> name;</div><div class="line">	&#125;</div><div class="line"></div><div class="line"><span class="keyword">private</span>:</div><div class="line">	<span class="keyword">char</span> *name;</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
+<p>上面的类有两个构造函数，利用这两个转换构造函数可以这么初始化一个对象：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Student A = <span class="string">"Xiaoming"</span>; <span class="comment">// 调用Student(char *name);</span></div><div class="line">Student B = A; <span class="comment">// 调用Student(const Student &amp;stu);</span></div></pre></td></tr></table></figure></p>
+<p>其中<code>Student(const Student &amp;)</code>函数又被称为<strong>拷贝构造函数</strong>，它实现了拷贝的语义，在上面代码段里它把<code>A</code>的内容复制给了<code>B</code>。</p>
+<p>而实现移动语义的构造函数呢？首先先知道什么情况下会用到“移动”。</p>
+<p>除了上面那种显式的初始化，还有其他会调用到拷贝构造函数的地方，比如函数调用：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function">Student <span class="title">to_uppercase</span><span class="params">(Student A)</span> </span>&#123;</div><div class="line">	<span class="keyword">char</span> &amp;initch = A.get_name()[<span class="number">0</span>];</div><div class="line">	<span class="keyword">if</span> (<span class="string">'a'</span> &lt;= initch &amp;&amp; initch &lt;= <span class="string">'z'</span>) &#123;</div><div class="line">		initch = initch - <span class="string">'a'</span> + <span class="string">'A'</span>;</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">return</span> A;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>这个函数是将<code>Student</code>对象的名字首字母改为大写。</p>
+<p>调用时由于是值传递，实参拷贝，这时就会调用到拷贝构造函数去初始化副本；而函数返回时，副本生命周期必然要结束，此时返回的不是副本本身，而是副本的副本，这时又会调用拷贝构造函数去初始化新副本。</p>
+<p>于是总共调用两次。第一次值传递，拷贝是有意义的，这样就能对副本进行首字母大写的修改而不会影响到实参；而第二次，似乎有点浪费，因为副本又拷贝了一份，随之副本生命周期就结束了，更理想的方案便是“移动”——副本直接移动到新副本上，反正副本都要挂了。</p>
+<p>如何移动？事实上对于对象里一般类型的移动与拷贝本质实现是一样的，二者的区别体现在指针类型上。</p>
+<p>拷贝分为深拷贝和浅拷贝，在上面例子里是深拷贝；而移动事实上类似浅拷贝，就是交换二者指针即可。于是实现类似如此：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">return_A.name = A.name;</div><div class="line">A.name = <span class="literal">nullptr</span>;</div></pre></td></tr></table></figure></p>
+<p>新副本<code>return_A</code>窃取副本<code>A</code>的指针，然后副本<code>A</code>的指针被设为空，副本<code>A</code>随之结束生命周期销毁时就不会影响到其原本指针指向的空间，这个空间已被新副本接管。</p>
+<p>不过新副本对于程序员是透明的，这怎么能直接对它进行操作呢——这时就是<strong>移动构造函数</strong>登场的时候了。</p>
+<p>首先要知道一点，标准规定函数返回值一律表现为右值，也就是执行<code>return A</code>时<code>A</code>是一个右值。所以，可以利用构造函数重载来实现：
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Student</span> &#123;</span></div><div class="line"><span class="keyword">public</span>:</div><div class="line"></div><div class="line">	<span class="comment">/* 移动构造函数 */</span></div><div class="line">	Student(Student &amp;&amp;stu) &#123;</div><div class="line">		<span class="keyword">this</span>-&gt;name = stu.name;</div><div class="line">		stu.name = <span class="literal">nullptr</span>;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	<span class="comment">/* 拷贝构造函数 */</span></div><div class="line">	Student(<span class="keyword">const</span> Student &amp;stu) &#123;</div><div class="line">		name = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="built_in">strlen</span>(stu.name) + <span class="number">1</span>];</div><div class="line">		<span class="built_in">strcpy</span>(name, stu.name);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	Student(<span class="keyword">char</span> *name) &#123;</div><div class="line">		<span class="keyword">this</span>-&gt;name = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="built_in">strlen</span>(name) + <span class="number">1</span>];</div><div class="line">		<span class="built_in">strcpy</span>(<span class="keyword">this</span>-&gt;name, name);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	<span class="comment">/* 析构函数 */</span></div><div class="line">	~Student() &#123;</div><div class="line">		<span class="keyword">if</span> (name != <span class="literal">nullptr</span>) &#123;</div><div class="line">			<span class="keyword">delete</span>[] name;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	<span class="function"><span class="keyword">char</span> *<span class="title">get_name</span><span class="params">()</span> </span>&#123;</div><div class="line">		<span class="keyword">return</span> name;</div><div class="line">	&#125;</div><div class="line"></div><div class="line"><span class="keyword">private</span>:</div><div class="line">	<span class="keyword">char</span> *name;</div><div class="line">&#125;;</div></pre></td></tr></table></figure></p>
+<p>可以看到上面代码新定义了一个构造函数<code>Student(Student &amp;&amp;)</code>，其参数是一个右值引用，它就是传说中的移动构造函数。</p>
+<p>执行到<code>return A</code>时，要拷贝副本<code>A</code>，由于<code>A</code>是右值，新副本就会调用这个移动构造函数进行初始化。相比之前调用拷贝构造函数，显然效率更高了，因为只是窃取指针而没有重新开辟内存空间进行复制。</p>
+<p>由于右值一般都是临时变量，生命周期短，所以定义移动构造函数不会造成什么意外后果，反而重复利用了临时创建的堆空间，提升效率。感觉这是非常精巧的设计。</p>
+<p>不过，可以通过调用<code>std::move()</code>函数将一个左值转化为右值，这时便可以显式将一个左值传递给移动构造函数，这时就要注意了，被移动的左值后面再使用时其指针已经变为空指针。</p>
+<p>此外除了初始化，还有重载赋值运算符实现拷贝赋值函数和移动赋值函数，同理就不多说了。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong>本文作者：</strong>
+      progrom
+    </li>
+    <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://progrom.cn/2017/08/08/rvalue-reference-and-move-semantic/" title="右值引用与移动语义">http://progrom.cn/2017/08/08/rvalue-reference-and-move-semantic/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong>
+      本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C++</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/08/06/thread-pool-implementation/" rel="next" title="线程池的实现">
+                <i class="fa fa-chevron-left"></i> 线程池的实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="uyan_frame"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="progrom" />
+          <p class="site-author-name" itemprop="name">progrom</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#左值引用-vs-右值引用"><span class="nav-number">1.</span> <span class="nav-text">左值引用 vs. 右值引用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拷贝语义-vs-移动语义"><span class="nav-number">2.</span> <span class="nav-text">拷贝语义 vs. 移动语义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拷贝构造函数-vs-移动构造函数"><span class="nav-number">3.</span> <span class="nav-text">拷贝构造函数 vs. 移动构造函数</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="author" itemprop="copyrightHolder">progrom</span>
+</div>
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    
+
+    
+      <!-- UY BEGIN -->
+      <script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2138814"></script>
+      <!-- UY END -->
+    
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.1.js"></script>
+  <script>AV.initialize("3xkPBzujCzIg5idTgjNgjUAS-gzGzoHsz", "zjkXFScXDfFFGQr2iyQB4E8c");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+</body>
+</html>

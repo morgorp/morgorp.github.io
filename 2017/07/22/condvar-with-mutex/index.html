@@ -1,0 +1,983 @@
+<!doctype html>
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="aIIXZDz35JAx9yECqvZgZtf6emIovRKesXaAT8zlga8" />
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="R7FUky9G0N" />
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="UNIX C,多线程," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="简述条件变量的使用 以及 对在pthread_cond_wait()中使用互斥量的一点理解">
+<meta name="keywords" content="UNIX C,多线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="对条件变量以及其中的互斥量的理解">
+<meta property="og:url" content="http://progrom.cn/2017/07/22/condvar-with-mutex/index.html">
+<meta property="og:site_name" content="尽人事，听天命">
+<meta property="og:description" content="简述条件变量的使用 以及 对在pthread_cond_wait()中使用互斥量的一点理解">
+<meta property="og:updated_time" content="2017-07-28T08:34:42.425Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="对条件变量以及其中的互斥量的理解">
+<meta name="twitter:description" content="简述条件变量的使用 以及 对在pthread_cond_wait()中使用互斥量的一点理解">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"right","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: false,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://progrom.cn/2017/07/22/condvar-with-mutex/"/>
+
+
+
+
+
+  <title> 对条件变量以及其中的互斥量的理解 | 尽人事，听天命 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?77f760bacf47c40266e44c0d4b68625f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">尽人事，听天命</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">随便写写</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://progrom.cn/2017/07/22/condvar-with-mutex/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="progrom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="尽人事，听天命">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                对条件变量以及其中的互斥量的理解
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-22T17:15:50+08:00">
+                2017-07-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/UNIX-C/" itemprop="url" rel="index">
+                    <span itemprop="name">UNIX C</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/07/22/condvar-with-mutex/" class="leancloud_visitors" data-flag-title="对条件变量以及其中的互斥量的理解">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数 </span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  简述条件变量的使用 以及 对在pthread_cond_wait()中使用互斥量的一点理解
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <hr>
+<h2 id="轮询程序">轮询程序</h2>
+<p>要让某个线程等待某个条件发生才继续执行，可以让线程用一个循环定时地轮询，比如：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="keyword">pthread_mutex_t</span> mutex = PTHREAD_MUTEX_INITIALIZER;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> *<span class="title">fun</span><span class="params">(<span class="keyword">void</span> *arg)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> *var_p = arg;</div><div class="line">    pthread_mutex_lock(&amp;mutex);</div><div class="line">    <span class="keyword">while</span>(*var_p == <span class="number">0</span>) &#123;</div><div class="line">        pthread_mutex_unlock(&amp;mutex);</div><div class="line">        usleep(<span class="number">100000</span>);</div><div class="line">        pthread_mutex_lock(&amp;mutex);</div><div class="line">    &#125;</div><div class="line">    pthread_mutex_unlock(&amp;mutex);</div><div class="line">    <span class="built_in">puts</span>(<span class="string">"ok"</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> var = <span class="number">0</span>;</div><div class="line">    <span class="keyword">pthread_t</span> pid;</div><div class="line"></div><div class="line">    pthread_create(&amp;pid, <span class="literal">NULL</span>, fun, &amp;var);</div><div class="line"></div><div class="line">    getchar();</div><div class="line">    pthread_mutex_lock(&amp;mutex);</div><div class="line">    var = <span class="number">1</span>;</div><div class="line">    pthread_mutex_unlock(&amp;mutex);</div><div class="line"></div><div class="line">    pthread_join(pid, <span class="literal">NULL</span>);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>这个程序大体上是这样的：</p>
+<ul>
+<li>子线程每隔100ms轮询一次，直到<code>var</code>不等于0的条件满足，才继续执行输出<code>ok</code>。</li>
+<li>主线程在标准输入中获得输入后会将<code>var</code>的值设置为 1，相当于子线程等待的条件满足了。</li>
+<li>其中由于<code>var</code>是临界资源，子线程和主线程有竞争条件，所以加了互斥量去保护它。</li>
+</ul>
+<hr>
+<h2 id="条件变量程序">条件变量程序</h2>
+<p>上面那个轮询程序不太靠谱，轮询间隔时间太短太消耗CPU资源，太长可能会错过条件的发生。</p>
+<p>而<strong>条件变量</strong>（<strong>Condtion Variable</strong>）就可以很好地解决这个问题。利用条件变量可以让一个线程在条件不满足时阻塞，直到另一个线程在条件满足时才通知唤醒它。改造的代码如下：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="keyword">pthread_cond_t</span> cond = PTHREAD_COND_INITIALIZER;</div><div class="line"><span class="keyword">pthread_mutex_t</span> mutex = PTHREAD_MUTEX_INITIALIZER;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> *<span class="title">fun</span><span class="params">(<span class="keyword">void</span> *arg)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> *var_p = arg;</div><div class="line">    pthread_mutex_lock(&amp;mutex);</div><div class="line">    <span class="keyword">while</span>(*var_p == <span class="number">0</span>) &#123;</div><div class="line">        pthread_cond_wait(&amp;cond, &amp;mutex); <span class="comment">// wait</span></div><div class="line">    &#125;</div><div class="line">    pthread_mutex_unlock(&amp;mutex);</div><div class="line">    <span class="built_in">puts</span>(<span class="string">"ok"</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> var = <span class="number">0</span>;</div><div class="line">    <span class="keyword">pthread_t</span> pid;</div><div class="line"></div><div class="line">    pthread_create(&amp;pid, <span class="literal">NULL</span>, fun, &amp;var);</div><div class="line"></div><div class="line">    getchar();</div><div class="line">    pthread_mutex_lock(&amp;mutex);</div><div class="line">    var = <span class="number">1</span>;</div><div class="line">    pthread_mutex_unlock(&amp;mutex);</div><div class="line">    pthread_cond_signal(&amp;cond); <span class="comment">// signal</span></div><div class="line"></div><div class="line">    pthread_join(pid, <span class="literal">NULL</span>);</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>条件变量中<code>pthread_cond_wait()</code>函数用来阻塞线程，而<code>pthread_cond_signal()</code>（<code>pthread_cond_broadcast()</code>）函数用来唤醒等待的线程，这几个函数的原型如下：</p>
+<p><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_cond_wait</span><span class="params">(<span class="keyword">pthread_cond_t</span> *cond,<span class="keyword">pthread_mutex_t</span> *mutex)</span></span>;</div></pre></td></tr></table></figure></p>
+<p><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_cond_signal</span><span class="params">(<span class="keyword">pthread_cond_t</span> *cond)</span></span>;</div></pre></td></tr></table></figure></p>
+<p><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">pthread_cond_broadcast</span><span class="params">(<span class="keyword">pthread_cond_t</span> *cond)</span></span>;</div></pre></td></tr></table></figure></p>
+<p>下面会对几个问题说明我的一些理解。</p>
+<hr>
+<h2 id="几个问题">几个问题</h2>
+<h3 id="问题一pthread_cond_wait函数为什么需要传递一个互斥量参数">问题一：pthread_cond_wait()函数为什么需要传递一个互斥量参数</h3>
+<blockquote>
+<p><a href="https://www.zhihu.com/question/24116967/" target="_blank" rel="external">https://www.zhihu.com/question/24116967/</a></p>
+</blockquote>
+<p>首先需要明确的是，和上面那个轮询程序一样，这个互斥量参数是用来保护<code>var</code>这个所要等待的条件的，是需要这个互斥量的。</p>
+<p><code>pthread_cond_wait()</code>在调用过程中做的事情如下：</p>
+<ol>
+<li>把当前线程放入<code>cond</code>中的等待唤醒的线程列表中</li>
+<li>释放<code>mutex</code>的锁</li>
+<li>阻塞，直到另一个线程调用<code>pthread_cond_signal()</code>或<code>pthread_cond_broadcast()</code></li>
+<li>在返回前重新获得<code>mutex</code>的锁</li>
+</ol>
+<p><strong>第2步</strong>和<strong>第4步</strong>对于<code>mutex</code>的解锁加锁动作就相当于上面那个轮询程序的<strong>第12行</strong>和<strong>第14行</strong>。</p>
+<p>如果<code>pthread_cond_wait()</code>函数不传递这个互斥量参数，那么解锁互斥量只能等到线程阻塞被唤醒从<code>pthread_cond_wait()</code>函数返回，而唤醒又需要条件改变调用<code>pthread_cond_signal()</code>函数，条件改变的前提是获得那个保护条件的互斥量的锁，而互斥量解锁又得等到阻塞的线程被唤醒。。简而言之，<strong>死锁</strong>了。所以需要传递它，使得互斥量的解锁在函数内进行。</p>
+<p>在网上对于<code>pthread_cond_wait()</code>为什么需要<code>mutex</code>参数的观点还有：同步<code>pthread_cond_wait()</code>函数和<code>pthread_cond_signal()</code>函数，避免<code>pthread_cond_wait()</code>函数调用后还未放入等待列表时，另一个线程条件满足调用<code>pthread_cond_signal()</code>函数，从而错过了这次条件的变化。</p>
+<p>一开始我也是这么理解的，不过现在我觉得这不是“需要”<code>mutex</code>参数的原因，而是一个作用。我相信确实起到了同步<code>pthread_cond_wait()</code>函数和<code>pthread_cond_signal()</code>函数的作用。</p>
+<p>因为如果只是单纯如上所述，为什么<strong>第2步</strong>释放锁的动作不放到第1步去，一开始就解锁应该会更好因为提高了并发的粒度。</p>
+<p>此外而APUE里有提到：</p>
+<blockquote>
+<p>The caller passes it locked to the function, which then atomically places the calling thread on the list of threads waiting for the condition and unlocks the mutex. This closes the window between the time that the condition is checked and the time that the thread goes to sleep waiting for the condition to change, so that the thread doesn’t miss a change in the condition.</p>
+</blockquote>
+<p>大概意思应该是，<strong>条件检查</strong>-&gt;<strong>线程放入队列</strong>-&gt;<strong>互斥量解锁</strong>-&gt;<strong>阻塞休眠</strong>，利用互斥量将前三步绑在一起，使得从<strong>条件检查</strong>开始到<strong>阻塞休眠</strong>之前不会被干扰。</p>
+<hr>
+<h3 id="问题二为什么使用while循环进行条件检查">问题二：为什么使用while循环进行条件检查</h3>
+<p>在轮询程序用<code>while</code>是为了轮询，而改用条件变量还用<code>while</code>而不是<code>if</code>，其作用是：</p>
+<ol>
+<li>
+<p>从<code>pthread_cond_wait()</code>函数返回后，由于其他线程的抢占有可能条件又改变了，变成不成立，此时应该要重新一下判断条件，而用<code>while</code>循环就能达成这个目的。</p>
+</li>
+<li>
+<p>避免“虚假唤醒”，即条件没有成立却调用了<code>pthread_cond_signal()</code>函数。</p>
+</li>
+</ol>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong>本文作者：</strong>
+      progrom
+    </li>
+    <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://progrom.cn/2017/07/22/condvar-with-mutex/" title="对条件变量以及其中的互斥量的理解">http://progrom.cn/2017/07/22/condvar-with-mutex/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong>
+      本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/UNIX-C/" rel="tag"># UNIX C</a>
+          
+            <a href="/tags/多线程/" rel="tag"># 多线程</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/19/unix-signal-mechanism/" rel="next" title="Unix/Linux信号处理机制">
+                <i class="fa fa-chevron-left"></i> Unix/Linux信号处理机制
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/07/23/reentrancy-thread_safe-async_signal_safe/" rel="prev" title="可重入 = 线程安全 + 异步信号安全">
+                可重入 = 线程安全 + 异步信号安全 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="uyan_frame"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="progrom" />
+          <p class="site-author-name" itemprop="name">progrom</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#轮询程序"><span class="nav-number">1.</span> <span class="nav-text">轮询程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#条件变量程序"><span class="nav-number">2.</span> <span class="nav-text">条件变量程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#几个问题"><span class="nav-number">3.</span> <span class="nav-text">几个问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#问题一pthread_cond_wait函数为什么需要传递一个互斥量参数"><span class="nav-number">3.1.</span> <span class="nav-text">问题一：pthread_cond_wait()函数为什么需要传递一个互斥量参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#问题二为什么使用while循环进行条件检查"><span class="nav-number">3.2.</span> <span class="nav-text">问题二：为什么使用while循环进行条件检查</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="author" itemprop="copyrightHolder">progrom</span>
+</div>
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    
+
+    
+      <!-- UY BEGIN -->
+      <script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2138814"></script>
+      <!-- UY END -->
+    
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.1.js"></script>
+  <script>AV.initialize("3xkPBzujCzIg5idTgjNgjUAS-gzGzoHsz", "zjkXFScXDfFFGQr2iyQB4E8c");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+</body>
+</html>

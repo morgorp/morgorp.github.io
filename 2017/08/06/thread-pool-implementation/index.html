@@ -1,0 +1,1021 @@
+<!doctype html>
+
+
+
+
+<html class="theme-next mist" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="google-site-verification" content="aIIXZDz35JAx9yECqvZgZtf6emIovRKesXaAT8zlga8" />
+
+
+
+
+
+
+
+  <meta name="baidu-site-verification" content="R7FUky9G0N" />
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="UNIX C,多线程," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="记录自己实现的一个简单的线程池以及遇到的问题。">
+<meta name="keywords" content="UNIX C,多线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="线程池的实现">
+<meta property="og:url" content="http://progrom.cn/2017/08/06/thread-pool-implementation/index.html">
+<meta property="og:site_name" content="尽人事，听天命">
+<meta property="og:description" content="记录自己实现的一个简单的线程池以及遇到的问题。">
+<meta property="og:image" content="http://ot423lspj.bkt.clouddn.com/20170806_threadpool_00.png">
+<meta property="og:image" content="http://ot423lspj.bkt.clouddn.com/20170806_threadpool_01.png">
+<meta property="og:updated_time" content="2017-08-06T10:55:07.103Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="线程池的实现">
+<meta name="twitter:description" content="记录自己实现的一个简单的线程池以及遇到的问题。">
+<meta name="twitter:image" content="http://ot423lspj.bkt.clouddn.com/20170806_threadpool_00.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"right","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: false,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://progrom.cn/2017/08/06/thread-pool-implementation/"/>
+
+
+
+
+
+  <title> 线程池的实现 | 尽人事，听天命 </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?77f760bacf47c40266e44c0d4b68625f";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="site-title">尽人事，听天命</span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">随便写写</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://progrom.cn/2017/08/06/thread-pool-implementation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="progrom">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="尽人事，听天命">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                线程池的实现
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-06T18:25:12+08:00">
+                2017-08-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/UNIX-C/" itemprop="url" rel="index">
+                    <span itemprop="name">UNIX C</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/08/06/thread-pool-implementation/" class="leancloud_visitors" data-flag-title="线程池的实现">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数 </span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  记录自己实现的一个简单的线程池以及遇到的问题。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <hr>
+<h2 id="意义">意义</h2>
+<p>线程池，字面意思可以理解成这是一个存放一些线程对象的池子，需要用到线程处理任务的时候就从池子中取出一个线程对象，处理完任务后把空闲的线程对象放回池子。</p>
+<p>用线程池的意义在于避免了大量线程创建和销毁的时间开销。此外合理地设置线程池并发的线程数与缓存任务的队列，将可能对一个系统的效率、性能实现很大的提升。</p>
+<p>我看了其他人大概的实现，然后自己简单实现了一个线程池。这个线程池基于<code>POSIX Threads</code>并使用C语言编写，已push到了github上：</p>
+<blockquote>
+<p><a href="https://github.com/morgorp/thread_pool" target="_blank" rel="external">https://github.com/morgorp/thread_pool</a></p>
+</blockquote>
+<p>下面介绍一些实现的原理。</p>
+<hr>
+<h2 id="原理">原理</h2>
+<p>需要的数据结构有：</p>
+<ol>
+<li>
+<p><strong>线程池</strong>：存放线程对象，由于是基于<code>POSIX Threads</code>实现的，所以就可以表示为一个<code>pthread_t</code>数组。</p>
+</li>
+<li>
+<p><strong>任务</strong>：需要处理的任务，在C语言中可以用函数指针和参数来表示。</p>
+</li>
+<li>
+<p><strong>任务缓存队列</strong>：当所有线程都在忙，这时就要将新任务放到缓存队列中等待处理，我采用了循环队列以先来先服务的调度方式实现。</p>
+</li>
+</ol>
+<p>实现的主要操作有：</p>
+<ol>
+<li>
+<p><strong>初始化线程池(init)</strong>：给定线程池最大容量和缓存队列最大容量的参数去初始化线程池。</p>
+</li>
+<li>
+<p><strong>关闭线程池(shutdown)</strong>：可以选择立即关闭或者等待还未处理的任务处理完，进入关闭状态后不会接受新的任务。</p>
+</li>
+<li>
+<p><strong>执行一个任务(execute)</strong>：另一个线程池执行一个任务，任务可能不能立即执行则放入队列等待执行。</p>
+</li>
+</ol>
+<p>我参考过Java的线程池，线程池主要几个流程大致如此：</p>
+<ol>
+<li>
+<p>初始化线程池时并不创建线程对象。</p>
+</li>
+<li>
+<p>添加新任务最一开始，如果线程池中没有空闲线程且线程对象未满，则创建一个线程对象。</p>
+</li>
+<li>
+<p>添加新任务就把任务插入到缓存队列中，然后唤醒空闲的线程。</p>
+</li>
+<li>
+<p>被唤醒的线程会从队列中取出任务然后执行。</p>
+</li>
+<li>
+<p>每个线程对象做的事情就是不断地从队列取出任务执行，如果队列为空则休眠等待唤醒。</p>
+</li>
+</ol>
+<p>一些细节可以参见下面的代码实现。</p>
+<hr>
+<h2 id="代码">代码</h2>
+<h3 id="thread_poolh">thread_pool.h</h3>
+<p><figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> * Copyright (C), 2017, progrom.</div><div class="line"> * File name: thread_pool.c</div><div class="line"> * Author: progrom</div><div class="line"> * Version: 0.01</div><div class="line"> * Date: 20170804 </div><div class="line"> * Description: 线程池头文件</div><div class="line"> */</div><div class="line"></div><div class="line">#ifndef THREAD_POOL_H</div><div class="line">#define THREAD_POOL_H</div><div class="line"></div><div class="line">#include &lt;pthread.h&gt;</div><div class="line"></div><div class="line">/* 线程池结构体 */</div><div class="line">typedef struct thread_pool_t &#123;</div><div class="line">	pthread_t *pool_thread; /* 线程数组 */</div><div class="line">	int pool_size; /* 线程池内线程最大数目(数组大小) */</div><div class="line">	int thread_num; /* 当前线程数 */</div><div class="line">	int running_cnt; /* 正在执行任务的线程数 */</div><div class="line"></div><div class="line">	struct thread_task_t *work_queue; /* 缓存未被处理任务的循环队列 */</div><div class="line">	int queue_size; /* 队列大小 */</div><div class="line">	int queue_front; /* 队列头指针 */</div><div class="line">	int queue_rear; /* 队列尾指针 */</div><div class="line"></div><div class="line">	int status; /* 线程池状态：0 关闭; 1 开启*/</div><div class="line"></div><div class="line">	pthread_mutex_t lock; /* 保护线程池临界资源的锁 */</div><div class="line">	pthread_mutex_t newtasklock; /* 是否允许添加新任务，作用于令旧任务执行优先级大于新任务添加 */</div><div class="line">	pthread_cond_t wakeup; /* 令线程休眠等待任务或唤醒执行任务的条件变量 */</div><div class="line">&#125; thread_pool_t;</div><div class="line"></div><div class="line"></div><div class="line">/* 任务结构体 */</div><div class="line">typedef struct thread_task_t &#123;</div><div class="line">	void (*func)(void *); /* 任务所要执行的函数 */</div><div class="line">	void *argv; /* 函数参数 */</div><div class="line">&#125; thread_task_t;</div><div class="line"></div><div class="line"></div><div class="line">void thread_pool_init(thread_pool_t *, int, int);</div><div class="line"></div><div class="line">void thread_task_init(thread_task_t *, void (*)(void *), void *);</div><div class="line"></div><div class="line">void thread_pool_shutdown(thread_pool_t *, int);</div><div class="line"></div><div class="line">int thread_pool_execute(thread_pool_t *, thread_task_t *);</div><div class="line"></div><div class="line">static void *thread_execute(void *); </div><div class="line"></div><div class="line">#endif</div></pre></td></tr></table></figure></p>
+<h3 id="thread_poolc">thread_pool.c</h3>
+<p><figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div><div class="line">196</div><div class="line">197</div><div class="line">198</div><div class="line">199</div><div class="line">200</div><div class="line">201</div><div class="line">202</div><div class="line">203</div><div class="line">204</div><div class="line">205</div><div class="line">206</div><div class="line">207</div><div class="line">208</div><div class="line">209</div><div class="line">210</div><div class="line">211</div><div class="line">212</div><div class="line">213</div><div class="line">214</div><div class="line">215</div><div class="line">216</div><div class="line">217</div><div class="line">218</div><div class="line">219</div><div class="line">220</div><div class="line">221</div><div class="line">222</div><div class="line">223</div><div class="line">224</div><div class="line">225</div><div class="line">226</div><div class="line">227</div><div class="line">228</div><div class="line">229</div><div class="line">230</div><div class="line">231</div><div class="line">232</div><div class="line">233</div><div class="line">234</div><div class="line">235</div><div class="line">236</div><div class="line">237</div><div class="line">238</div><div class="line">239</div><div class="line">240</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> * Copyright (C), 2017, progrom.</div><div class="line"> * File name: thread_pool.c</div><div class="line"> * Author: progrom</div><div class="line"> * Version: 0.01</div><div class="line"> * Date: 20170804 </div><div class="line"> * Description: 线程池</div><div class="line"> */</div><div class="line"></div><div class="line">#include "thread_pool.h"</div><div class="line">#include &lt;stdlib.h&gt;</div><div class="line">#include &lt;unistd.h&gt;</div><div class="line"></div><div class="line">/**</div><div class="line"> * Function: thread_pool_init</div><div class="line"> * Description: 初始化一个线程池</div><div class="line"> * Input:</div><div class="line"> *		tp_p 所要初始化的线程池</div><div class="line"> *		pool_size 线程池能容纳的最大线程数</div><div class="line"> *		queue_size 任务队列能缓存的最大任务数</div><div class="line"> * Ouput:</div><div class="line"> * Return:</div><div class="line"> */</div><div class="line">void thread_pool_init</div><div class="line">(thread_pool_t *tp_p, int pool_size, int queue_size)</div><div class="line">&#123;</div><div class="line">	if(tp_p==NULL || pool_size&lt;1 || queue_size&lt;1) &#123;</div><div class="line">		return;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	tp_p-&gt;pool_thread = malloc(sizeof(pthread_t) * pool_size);</div><div class="line">	tp_p-&gt;pool_size = pool_size;</div><div class="line">	tp_p-&gt;thread_num = 0;</div><div class="line">	tp_p-&gt;running_cnt = 0;</div><div class="line"></div><div class="line">	/* 因为循环队列采用的实现是预留一个空位以区分队满和队空状态 */</div><div class="line">	/* 故 queue_size + 1 */</div><div class="line">	tp_p-&gt;work_queue = malloc(sizeof(thread_task_t) * (queue_size+1));</div><div class="line">	tp_p-&gt;queue_size = queue_size+1;</div><div class="line">	tp_p-&gt;queue_front = 0;</div><div class="line">	tp_p-&gt;queue_rear = 0;</div><div class="line"></div><div class="line">	tp_p-&gt;status = 1;</div><div class="line"></div><div class="line">	pthread_mutex_init(&amp;tp_p-&gt;lock, NULL);</div><div class="line">	pthread_mutex_init(&amp;tp_p-&gt;newtasklock, NULL);</div><div class="line">	pthread_cond_init(&amp;tp_p-&gt;wakeup, NULL);</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">/**</div><div class="line"> * Function: thread_task_init</div><div class="line"> * Description: 初始化一个任务</div><div class="line"> * Input:</div><div class="line"> *		tt_p 所要初始化的任务</div><div class="line"> *		func 任务所要执行的函数</div><div class="line"> *		arg 函数的参数</div><div class="line"> * Ouput:</div><div class="line"> * Return:</div><div class="line"> */</div><div class="line">void thread_task_init</div><div class="line">(thread_task_t *tt_p, void (*func)(void *), void *argv)</div><div class="line">&#123;</div><div class="line">	if(tt_p==NULL || func==NULL) &#123;</div><div class="line">		return;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	tt_p-&gt;func = func;</div><div class="line">	tt_p-&gt;argv = argv;</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">/**</div><div class="line"> * Function: thread_pool_shutdown</div><div class="line"> * Description:</div><div class="line"> *		关闭一个线程池</div><div class="line"> *		处于关闭状态的线程池不再接受任务</div><div class="line"> *		如果选择不立即关闭线程池(now=0)则会等待直到所有任务(包括队列里的任务)完成</div><div class="line"> * Input:</div><div class="line"> *		tp_p 所要关闭的线程池</div><div class="line"> *		now 是否立即关闭：0 否; 非0 是</div><div class="line"> * Ouput:</div><div class="line"> * Return:</div><div class="line"> */</div><div class="line">void thread_pool_shutdown(thread_pool_t *tp_p, int now)</div><div class="line">&#123;</div><div class="line">	if(tp_p == NULL) &#123;</div><div class="line">		return;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	/* 设置线程池状态为关闭 */</div><div class="line">	pthread_mutex_lock(&amp;tp_p-&gt;lock);</div><div class="line">	tp_p-&gt;status = 0;</div><div class="line">	pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line"></div><div class="line">	/* 立即关闭，取消所有线程 */</div><div class="line">	if(now != 0) &#123;</div><div class="line">		for(int i=0; i&lt;tp_p-&gt;thread_num; ++i) &#123;</div><div class="line">			pthread_cancel(tp_p-&gt;pool_thread[i]);</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	/* 等待所有线程结束 */</div><div class="line">	for(int i=0; i&lt;tp_p-&gt;thread_num; ++i) &#123;</div><div class="line">		pthread_join(tp_p-&gt;pool_thread[i], NULL);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	/* 释放动态分配的内存 */</div><div class="line">	free(tp_p-&gt;pool_thread);</div><div class="line">	free(tp_p-&gt;work_queue);</div><div class="line"></div><div class="line">	/* 销毁锁 */</div><div class="line">	pthread_cond_destroy(&amp;tp_p-&gt;wakeup);</div><div class="line">	pthread_mutex_destroy(&amp;tp_p-&gt;newtasklock);</div><div class="line">	pthread_mutex_destroy(&amp;tp_p-&gt;lock);</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">/**</div><div class="line"> * Function: thread_pool_execute</div><div class="line"> * Description: 令一个线程池执行一个任务</div><div class="line"> * Input:</div><div class="line"> *		tp_p 所要执行任务的线程池</div><div class="line"> *		tt_p 所要执行的任务</div><div class="line"> * Ouput:</div><div class="line"> * Return:</div><div class="line"> *		0 成功</div><div class="line"> *		-1 失败</div><div class="line"> */</div><div class="line">int thread_pool_execute(thread_pool_t *tp_p, thread_task_t *tt_p)</div><div class="line">&#123;</div><div class="line">	if(tp_p == NULL || tt_p==NULL) &#123;</div><div class="line">		return -1;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	pthread_mutex_lock(&amp;tp_p-&gt;newtasklock); // 如果还不允许添加新任务则阻塞</div><div class="line">	pthread_mutex_unlock(&amp;tp_p-&gt;newtasklock);</div><div class="line"></div><div class="line">	pthread_mutex_lock(&amp;tp_p-&gt;lock);</div><div class="line"></div><div class="line">	/* 线程池已处于关闭状态 */</div><div class="line">	if(tp_p-&gt;status &lt;= 0) &#123;</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line">		return -1;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	/* 如果所有已创建的线程都在忙碌且线程池还未满则创建一个新的线程 */</div><div class="line">	if(tp_p-&gt;running_cnt&gt;=tp_p-&gt;thread_num &amp;&amp; tp_p-&gt;thread_num&lt;tp_p-&gt;pool_size) &#123;</div><div class="line">		int thread_num = tp_p-&gt;thread_num++;</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line">		pthread_create(&amp;tp_p-&gt;pool_thread[thread_num], NULL, thread_execute, tp_p);</div><div class="line">		pthread_mutex_lock(&amp;tp_p-&gt;lock);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	/* 任务入队 */</div><div class="line">	int nrear = tp_p-&gt;queue_rear+1; // nrear = 尾指针后移一格</div><div class="line">	if(nrear &gt;= tp_p-&gt;queue_size) nrear = 0;</div><div class="line">	if(nrear == tp_p-&gt;queue_front) &#123; // 队列已满</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line">		return -1;</div><div class="line">	&#125;</div><div class="line">	tp_p-&gt;work_queue[tp_p-&gt;queue_rear] = *tt_p; // 入队</div><div class="line">	tp_p-&gt;queue_rear = nrear;</div><div class="line"></div><div class="line">	/* 存在空闲的睡眠线程，唤醒线程去执行任务 */</div><div class="line">	if(tp_p-&gt;running_cnt &lt; tp_p-&gt;thread_num) &#123;</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line"></div><div class="line">		pthread_cond_signal(&amp;tp_p-&gt;wakeup); // 唤醒线程</div><div class="line">		</div><div class="line">		/* 轮询直到任务真正被唤醒的线程从队列取出，这儿用轮询因为个人觉得等待时间比较短没必要用条件变量增加开销 */</div><div class="line">		pthread_mutex_lock(&amp;tp_p-&gt;newtasklock); // 还未确定任务是否被新线程从队列取出，暂时不允许添加新任务</div><div class="line">		while(tp_p-&gt;queue_front != tp_p-&gt;queue_rear) &#123;&#125; // 读取这两个临界资源不必用互斥量保护，不影响结果</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;newtasklock); // 允许添加新任务了</div><div class="line">	&#125; else &#123;</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	return 0;</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">/**</div><div class="line"> * Function: thread_execute</div><div class="line"> * Description:</div><div class="line"> *		static函数，仅在本文件可见</div><div class="line"> *		启动pthread线程所调用的函数</div><div class="line"> *		主要就是不停地从队列中取出任务执行</div><div class="line"> * Input:</div><div class="line"> *		arg 线程所属的线程池</div><div class="line"> * Ouput:</div><div class="line"> * Return: NULL</div><div class="line"> */</div><div class="line">static void *thread_execute(void *arg)</div><div class="line">&#123;</div><div class="line">	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL); // 设置线程为异步取消</div><div class="line"></div><div class="line">	thread_pool_t *tp_p = arg;</div><div class="line">	thread_task_t task;</div><div class="line"></div><div class="line">	for(;;) &#123;</div><div class="line"></div><div class="line">		pthread_mutex_lock(&amp;tp_p-&gt;lock);</div><div class="line"></div><div class="line">		/* 线程池已关闭且队列中没有未执行的任务 */</div><div class="line">		if(tp_p-&gt;status&lt;=0 &amp;&amp; tp_p-&gt;queue_rear==tp_p-&gt;queue_front) &#123;</div><div class="line">			pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line">			break;</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		/* 等待队列任务的到来 */</div><div class="line">		while(tp_p-&gt;queue_rear == tp_p-&gt;queue_front) &#123;</div><div class="line">			pthread_cond_wait(&amp;tp_p-&gt;wakeup, &amp;tp_p-&gt;lock);</div><div class="line"></div><div class="line">			/* 线程池处于关闭状态且队列没有未执行任务，准备终止线程 */</div><div class="line">			if(tp_p-&gt;status&lt;=0 &amp;&amp; tp_p-&gt;queue_rear==tp_p-&gt;queue_front) &#123;</div><div class="line">				pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line">				goto EXIT;</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line"></div><div class="line">		/* 从队首取出任务 */</div><div class="line">		task = tp_p-&gt;work_queue[tp_p-&gt;queue_front++];</div><div class="line">		if(tp_p-&gt;queue_front &gt;= tp_p-&gt;queue_size) tp_p-&gt;queue_front = 0;</div><div class="line"></div><div class="line">		/* 执行任务 */</div><div class="line">		++tp_p-&gt;running_cnt; // 正在执行任务的线程数+1</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line"></div><div class="line">		task.func(task.argv); // 调用执行任务的函数</div><div class="line"></div><div class="line">		pthread_mutex_lock(&amp;tp_p-&gt;lock);</div><div class="line">		--tp_p-&gt;running_cnt; // 正在执行任务的线程数-1</div><div class="line">		pthread_mutex_unlock(&amp;tp_p-&gt;lock);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">EXIT: // 准备终止线程</div><div class="line"></div><div class="line">	return NULL;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<hr>
+<h2 id="问题">问题</h2>
+<p>测试其实很不充分。。性能不太懂测。基本功能是有基本测了下。</p>
+<p>感觉线程安全貌似做得不够好：</p>
+<ul>
+<li>
+<p>锁的粒度有点大，只有一个<code>lock</code>锁来保护所有临界资源，可以考虑一个临界资源对应一个锁？不过粒度太小，频繁加锁解锁开销肯定是有的，这个可能需要实际测试性能来权衡吧。</p>
+</li>
+<li>
+<p><code>shutdown()</code>函数正确性似乎欠缺考虑，比如并发地多次重复执行关闭函数，还有在其他函数里有对互斥量解过锁这时调用关闭函数会有点问题。</p>
+</li>
+</ul>
+<p><strong>这儿我想提的是测试时发现的一个问题，感觉还是挺有意义的。</strong></p>
+<p><code>execute()</code>里一开始我的实现是把任务放入队列，然后调用<code>pthread_cond_signal()</code>就完事了。可是用如下测试程序测试时出现了问题：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * Copyright (C), 2017, progrom.</div><div class="line"> * File name: test.c</div><div class="line"> * Author: progrom</div><div class="line"> * Version: 0.01</div><div class="line"> * Date: 20170806</div><div class="line"> * Description: 简单地测试一下线程池</div><div class="line"> */</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"thread_pool.h"</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="comment">/* the arg of a task */</span></div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">task_arg</span> &#123;</span></div><div class="line">	<span class="keyword">int</span> num; <span class="comment">/* the number of the task */</span></div><div class="line">	<span class="keyword">int</span> sec; <span class="comment">/* working time of the task */</span></div><div class="line">&#125; task_arg;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">func</span><span class="params">(<span class="keyword">void</span> *arg)</span></span></div><div class="line">&#123;</div><div class="line">	task_arg *ta = arg;</div><div class="line">	<span class="built_in">printf</span>(<span class="string">"\tI am task #%d and I'm going to sleep for %d second.\n"</span>, ta-&gt;num, ta-&gt;sec);</div><div class="line">	sleep(ta-&gt;sec); <span class="comment">// working...</span></div><div class="line">	<span class="built_in">printf</span>(<span class="string">"\tI am task #%d and I have finished.\n"</span>, ta-&gt;num);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></div><div class="line">&#123;</div><div class="line">	<span class="keyword">thread_pool_t</span> pool;</div><div class="line"></div><div class="line">	<span class="built_in">puts</span>(<span class="string">"init a thread pool with pool size of 3 and queue size of 2.\n"</span>);</div><div class="line">	thread_pool_init(&amp;pool, <span class="number">3</span>, <span class="number">2</span>);</div><div class="line"></div><div class="line">	<span class="keyword">thread_task_t</span> task;</div><div class="line">	task_arg args[<span class="number">5</span>];</div><div class="line">	</div><div class="line">	<span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;<span class="number">5</span>; ++i) &#123;</div><div class="line">		args[i].num = i;</div><div class="line">		args[i].sec = <span class="number">2</span>;</div><div class="line">		thread_task_init(&amp;task, func, &amp;args[i]);</div><div class="line"></div><div class="line">		<span class="built_in">printf</span>(<span class="string">"execute #%d task\n"</span>, i);</div><div class="line">		<span class="keyword">int</span> ret = thread_pool_execute(&amp;pool, &amp;task);</div><div class="line">		<span class="built_in">printf</span>(<span class="string">"success: %d\n"</span>, ret);</div><div class="line">		<span class="built_in">printf</span>(<span class="string">"pool.thread_num: %d\n"</span>, pool.thread_num);</div><div class="line">		<span class="built_in">printf</span>(<span class="string">"pool.running_cnt: %d\n"</span>, pool.running_cnt);</div><div class="line">		<span class="built_in">printf</span>(<span class="string">"pool.queue_front: %d\n"</span>, pool.queue_front);</div><div class="line">		<span class="built_in">printf</span>(<span class="string">"pool.queue_rear: %d\n"</span>, pool.queue_rear);</div><div class="line">		<span class="built_in">putchar</span>(<span class="string">'\n'</span>);</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	thread_pool_shutdown(&amp;pool, <span class="number">0</span>); <span class="comment">// wait until all tasks are finished</span></div><div class="line">	<span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>测试结果是：
+<img src="http://ot423lspj.bkt.clouddn.com/20170806_threadpool_00.png" alt="不合理的结果" title="不合理的结果"></p>
+<p>这个测试相当于一种任务很密集的场景，线程池接受一个任务后立马又接受下一个任务，由于互斥量，线程对象迟迟不能从队列中取出任务执行。</p>
+<p>所以看到的结果是：</p>
+<ul>
+<li>线程池从始至终只创建了一个一直很空闲的线程</li>
+<li>任务们却一直阻塞迟迟不能得到执行</li>
+<li>直到任务缓存队列被塞满了，后面任务全部都被丢弃了</li>
+<li>终于不在有新任务出现CPU空闲了，这时那个唯一的线程才取出队列中的任务，一个接着一个单线程地执行完</li>
+</ul>
+<p>我想了想这个问题的解决方法：可以令<code>pthread_cond_signal()</code>调用后确保唤醒的线程一定会从队列中取出任务而不被新任务的添加打断。</p>
+<p>为了实现这个效果，我加入了一个互斥量<code>newtasklock</code>来阻止新任务的添加，并且用一个循环轮询直到队列的任务被取出。见代码段：
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* 存在空闲的睡眠线程，唤醒线程去执行任务 */</span></div><div class="line"><span class="keyword">if</span>(tp_p-&gt;running_cnt &lt; tp_p-&gt;thread_num) &#123;</div><div class="line"></div><div class="line">    pthread_cond_signal(&amp;tp_p-&gt;wakeup); <span class="comment">// 唤醒线程</span></div><div class="line">    </div><div class="line">    <span class="comment">/* 轮询直到任务真正被唤醒的线程从队列取出，这儿用轮询因为个人觉得等待时间比较短没必要用条件变量增加开销 */</span></div><div class="line">    pthread_mutex_lock(&amp;tp_p-&gt;newtasklock); <span class="comment">// 还未确定任务是否被新线程从队列取出，暂时不允许添加新任务</span></div><div class="line">    <span class="keyword">while</span>(tp_p-&gt;queue_front != tp_p-&gt;queue_rear) &#123;&#125; <span class="comment">// 读取这两个临界资源不必用互斥量保护，不影响结果</span></div><div class="line">    pthread_mutex_unlock(&amp;tp_p-&gt;newtasklock); <span class="comment">// 允许添加新任务了</span></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>最终的结果终于合理了：
+<img src="http://ot423lspj.bkt.clouddn.com/20170806_threadpool_01.png" alt="合理的结果" title="合理的结果"></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong>本文作者：</strong>
+      progrom
+    </li>
+    <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="http://progrom.cn/2017/08/06/thread-pool-implementation/" title="线程池的实现">http://progrom.cn/2017/08/06/thread-pool-implementation/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong>
+      本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/UNIX-C/" rel="tag"># UNIX C</a>
+          
+            <a href="/tags/多线程/" rel="tag"># 多线程</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/07/28/signal-synchronized-processing-model-of-multithread/" rel="next" title="多线程中信号同步处理模型">
+                <i class="fa fa-chevron-left"></i> 多线程中信号同步处理模型
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/08/08/rvalue-reference-and-move-semantic/" rel="prev" title="右值引用与移动语义">
+                右值引用与移动语义 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="uyan_frame"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="progrom" />
+          <p class="site-author-name" itemprop="name">progrom</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#意义"><span class="nav-number">1.</span> <span class="nav-text">意义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原理"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码"><span class="nav-number">3.</span> <span class="nav-text">代码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#thread_poolh"><span class="nav-number">3.1.</span> <span class="nav-text">thread_pool.h</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#thread_poolc"><span class="nav-number">3.2.</span> <span class="nav-text">thread_pool.c</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题"><span class="nav-number">4.</span> <span class="nav-text">问题</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="author" itemprop="copyrightHolder">progrom</span>
+</div>
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    
+
+    
+      <!-- UY BEGIN -->
+      <script type="text/javascript" src="http://v2.uyan.cc/code/uyan.js?uid=2138814"></script>
+      <!-- UY END -->
+    
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.1.js"></script>
+  <script>AV.initialize("3xkPBzujCzIg5idTgjNgjUAS-gzGzoHsz", "zjkXFScXDfFFGQr2iyQB4E8c");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+</body>
+</html>
