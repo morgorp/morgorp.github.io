@@ -98,7 +98,7 @@
 <meta property="og:description" content="记录自己实现的一个简单的线程池以及遇到的问题。">
 <meta property="og:image" content="http://ot423lspj.bkt.clouddn.com/20170806_threadpool_00.png">
 <meta property="og:image" content="http://ot423lspj.bkt.clouddn.com/20170806_threadpool_01.png">
-<meta property="og:updated_time" content="2017-08-21T11:38:13.944Z">
+<meta property="og:updated_time" content="2017-08-21T11:52:33.359Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="线程池的实现">
 <meta name="twitter:description" content="记录自己实现的一个简单的线程池以及遇到的问题。">
@@ -474,8 +474,8 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* 存在空闲的睡眠线程，唤醒线程去执行任务 */</span></div><div class="line"><span class="keyword">if</span>(tp_p-&gt;running_cnt &lt; tp_p-&gt;thread_num) &#123;</div><div class="line">	pthread_cond_signal(&amp;tp_p-&gt;wakeup); <span class="comment">// 唤醒线程</span></div><div class="line">	</div><div class="line">	<span class="comment">/* 轮询直到任务真正被唤醒的线程从队列取出，这儿用轮询因为个人觉得等待时间比较短没必要用条件变量增加开销 */</span></div><div class="line">	pthread_mutex_lock(&amp;tp_p-&gt;newtasklock); <span class="comment">// 还未确定任务是否被新线程从队列取出，暂时不允许添加新任务</span></div><div class="line">	</div><div class="line">	<span class="comment">/* 读取这三个临界资源不必用互斥量保护不影响结果的正确性，此外三个变量均声明为volatile */</span></div><div class="line">	<span class="keyword">while</span>(tp_p-&gt;queue_front!=tp_p-&gt;queue_rear &amp;&amp; tp_p-&gt;status!=<span class="number">0</span>) &#123;&#125; <span class="comment">// 轮询直到线程池关闭或任务被取出</span></div><div class="line">	pthread_mutex_unlock(&amp;tp_p-&gt;newtasklock); <span class="comment">// 允许添加新任务了</span></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
 <p>这儿用<code>while</code>循环轮询，上面注释也有说到原因：</p>
 <ol>
-<li>是结果正确性不影响</li>
-<li>是唤醒线程取任务出来是个很快的过程，没必要加个条件变量去通知。这就如同明明是一件很快就会发生的事情，完全没必要去通知另一个人告诉它这件事发生时告诉我，通知另一个人的时候说不定事情就发生了，所以自己静静等待即可。</li>
+<li>结果正确性不影响；</li>
+<li>唤醒线程取任务出来是个很快的过程，没必要加个条件变量去通知。这就如同明明是一件很快就会发生的事情，完全没必要去通知另一个人告诉它这件事发生时告诉我，通知另一个人的时候说不定事情就发生了，所以自己静静等待即可。</li>
 </ol>
 <p>我认为应该挺科学的。。</p>
 <p>此外这三个变量声明为<code>volatile</code>（如下代码段），这样就不怕编译器的优化导致死循环，虽然感觉不太可能出现优化的情况，不过多次一举也不损失什么，稳点反而更好。
