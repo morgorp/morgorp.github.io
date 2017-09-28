@@ -96,7 +96,7 @@
 <meta property="og:url" content="http://progrom.cn/2017/09/28/makefile-notes/index.html">
 <meta property="og:site_name" content="尽人事，听天命">
 <meta property="og:description" content="Makefile小记。">
-<meta property="og:updated_time" content="2017-09-28T13:44:47.795Z">
+<meta property="og:updated_time" content="2017-09-28T13:51:10.180Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Makefile小记">
 <meta name="twitter:description" content="Makefile小记。">
@@ -403,13 +403,13 @@
 <p>利用伪目标生成多个最终目标文件：
 <figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">all : a.o b.o c.o</div><div class="line">.PHONY : all</div><div class="line">a.o :</div><div class="line">b.o :</div><div class="line">c.o :</div></pre></td></tr></table></figure></p>
 <hr>
-<h3 id="隐含规则">隐含规则</h3>
+<h2 id="隐含规则">隐含规则</h2>
 <p><figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">program : header.h</div><div class="line"><span class="comment"># make认为program是一个可执行文件，等同于：</span></div><div class="line">program : program.c header.h</div><div class="line">    gcc -o program program.c</div></pre></td></tr></table></figure></p>
 <p><figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">program.o : header.h</div><div class="line"><span class="comment"># .o结尾的目标文件，等同于：</span></div><div class="line">program.o : program.c header.h</div><div class="line">    gcc -c program.c -o program.o</div></pre></td></tr></table></figure></p>
 <p>库：<code>库名(成员名)</code>
 <figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">mylib : mylib(file1.o)</div><div class="line">    gcc -c file1.c</div><div class="line">    ar -ruv mylib file1.o</div><div class="line">    rm -f file1.o</div><div class="line">mylib : mylib(file2.o)</div><div class="line">    gcc -c file2.c</div><div class="line">    ar -ruv mylib file2.o</div><div class="line">    rm -f file2.o</div><div class="line"><span class="comment"># 进一步简化：</span></div><div class="line">mylib : mylib(file1.o file2.o)</div><div class="line">    ar -ruv <span class="variable">$@</span> <span class="variable">$?</span></div><div class="line">    rm -f <span class="variable">$?</span></div><div class="line">file1.o :</div><div class="line">file2.o :</div><div class="line"><span class="comment"># 进一步简化：</span></div><div class="line">mylib : mylib(file1.o file2.o)</div><div class="line">    ar -ruv <span class="variable">$@</span> <span class="variable">$?</span></div><div class="line">    rm -f <span class="variable">$?</span></div><div class="line"><span class="comment"># 最终简化：</span></div><div class="line">mylib : mylib(file1.o file2.o)</div></pre></td></tr></table></figure></p>
 <hr>
-<h3 id="变量">变量</h3>
+<h2 id="变量">变量</h2>
 <p><figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">VAR = <span class="variable">$(RAV)</span> <span class="comment"># 递归展开</span></div><div class="line">VAR := <span class="variable">$(RAV)</span> <span class="comment"># 立即展开，边解释执行边展开</span></div><div class="line">VAR ?= olleh <span class="comment"># 未赋值时才赋值</span></div><div class="line">VAR += <span class="variable">$(RAV)</span> <span class="comment"># 追加</span></div><div class="line">RAV = hello</div></pre></td></tr></table></figure></p>
 <p>预定义变量：</p>
 <p>除了<code>CC</code>、<code>CFLAGS</code>、<code>MAKE</code>、<code>MAKEFLAGS</code>、<code>SHELL</code>、<code>PWD</code>、<code>AR</code>、<code>ARFLAGS</code>、<code>LIBSUFFIXE</code>、<code>A</code>以外，还有：</p>
@@ -424,7 +424,7 @@
 <li><code>$&gt;</code>：静态库库名</li>
 </ol>
 <hr>
-<h3 id="文件和目录">文件和目录</h3>
+<h2 id="文件和目录">文件和目录</h2>
 <h3 id="设置搜索目录">设置搜索目录</h3>
 <p>可以通过设置<code>VPATH</code>变量：
 <figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">VPATH = ../src:../foo/<span class="keyword">include</span></div></pre></td></tr></table></figure></p>
@@ -657,7 +657,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本构成"><span class="nav-number">1.</span> <span class="nav-text">基本构成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#特殊目标"><span class="nav-number">2.</span> <span class="nav-text">特殊目标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#隐含规则"><span class="nav-number">2.1.</span> <span class="nav-text">隐含规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#变量"><span class="nav-number">2.2.</span> <span class="nav-text">变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#文件和目录"><span class="nav-number">2.3.</span> <span class="nav-text">文件和目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#设置搜索目录"><span class="nav-number">2.4.</span> <span class="nav-text">设置搜索目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#包含其他makefile"><span class="nav-number">2.5.</span> <span class="nav-text">包含其他Makefile</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本构成"><span class="nav-number">1.</span> <span class="nav-text">基本构成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#特殊目标"><span class="nav-number">2.</span> <span class="nav-text">特殊目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#隐含规则"><span class="nav-number">3.</span> <span class="nav-text">隐含规则</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#变量"><span class="nav-number">4.</span> <span class="nav-text">变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#文件和目录"><span class="nav-number">5.</span> <span class="nav-text">文件和目录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#设置搜索目录"><span class="nav-number">5.1.</span> <span class="nav-text">设置搜索目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#包含其他makefile"><span class="nav-number">5.2.</span> <span class="nav-text">包含其他Makefile</span></a></li></ol></li></ol></div>
             
 
           </div>
