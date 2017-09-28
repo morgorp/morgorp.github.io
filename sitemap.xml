@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://progrom.cn/about/index.html</loc>
+    
+    <lastmod>2017-09-28T13:45:48.374Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://progrom.cn/2017/09/28/makefile-notes/</loc>
     
     <lastmod>2017-09-28T13:44:47.795Z</lastmod>
@@ -12,13 +19,6 @@
     <loc>http://progrom.cn/2017/08/06/thread-pool-implementation/</loc>
     
     <lastmod>2017-08-22T11:08:46.289Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://progrom.cn/about/index.html</loc>
-    
-    <lastmod>2017-08-18T13:16:42.596Z</lastmod>
     
   </url>
   
