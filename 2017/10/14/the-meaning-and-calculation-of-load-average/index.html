@@ -96,7 +96,7 @@
 <meta property="og:url" content="http://progrom.cn/2017/10/14/the-meaning-and-calculation-of-load-average/index.html">
 <meta property="og:site_name" content="尽人事，听天命">
 <meta property="og:description" content="负载（Load Average）的查看、含义、多处理器、与CPU使用率的对比、多线程、计算方法以及Linux中的实现。">
-<meta property="og:updated_time" content="2017-10-14T12:49:41.867Z">
+<meta property="og:updated_time" content="2017-10-14T13:09:20.127Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux系统中负载（Load Average）的含义与计算方法">
 <meta name="twitter:description" content="负载（Load Average）的查看、含义、多处理器、与CPU使用率的对比、多线程、计算方法以及Linux中的实现。">
@@ -393,12 +393,16 @@
 <h2 id="负载的查看">负载的查看</h2>
 <p>在Linux系统中，使用<code>uptime</code>、<code>w</code>和<code>top</code>命令都可以查看负载，或者直接通过<code>cat /proc/loadavg</code>查看。</p>
 <p>比如说<code>uptime</code>命令：</p>
+<blockquote>
+<p>20:56:33 up 22 min,  3 users,  load average: 0.39, 0.25, 0.10</p>
+</blockquote>
 <p>可以看到有三个值，这三个值分别表示：</p>
-<ol>
+<ul>
 <li>前1分钟系统的平均负载</li>
 <li>前5分钟系统的平均负载</li>
 <li>前15分钟系统的平均负载</li>
-</ol>
+</ul>
+<p>下面就来看看负载的含义。</p>
 <hr>
 <h2 id="负载的含义">负载的含义</h2>
 <p>负载的含义是<code>运行队列的平均长度</code>。</p>
@@ -440,7 +444,7 @@
 <p>那么
 $$la_{-x} = la_{+x} \times (e^{-1}) \ + \  n_x \times (1-e^{-1})$$
 即
-$$la_{-x} = la_{+x} \times 37% \ + \  n_x \times 63%$$</p>
+$$la_{-x} = la_{+x} \times 0.37 \ + \  n_x \times 0.63$$</p>
 <p>可以看出$x$分钟前的负载权重是比较小的，随着时间的推移前面的信息影响会越来越小，直到趋近于0，最近时间的信息影响的比重比较大。</p>
 <p>而在Linux系统中，是每间隔$5HZ$或者$5秒$统计一次运行的任务数，然后计算均值。那么随着时间推移，可以得出这么一个序列：</p>
 <p>$$n_1, n_2, n_3, ..., n_{t-1}, n_t$$</p>
