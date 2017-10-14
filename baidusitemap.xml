@@ -4,6 +4,26 @@
 
     
   <url>
+    <loc>http://progrom.cn/2017/10/14/the-meaning-and-calculation-of-load-average/</loc>
+    <lastmod>2017-10-14T12:44:02.486Z</lastmod>
+    <data>
+        <display>
+        <title>Linux系统中负载（Load Average）的含义与计算方法</title>
+        <pubTime>2017-10-14T12:34:56.000Z</pubTime>
+        
+        <tag>操作系统</tag>
+         
+         
+           
+             
+              <breadCrumb title="系统内核" url="http://progrom.cn/categories/%E7%B3%BB%E7%BB%9F%E5%86%85%E6%A0%B8/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>http://progrom.cn/2017/09/28/makefile-notes/</loc>
     <lastmod>2017-09-28T13:51:10.180Z</lastmod>
     <data>
