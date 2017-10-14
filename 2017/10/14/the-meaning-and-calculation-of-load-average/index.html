@@ -89,17 +89,17 @@
 
 
 
-<meta name="description" content="负载的查看 在Linux系统中，使用uptime、w和top命令都可以查看负载，或者直接通过cat /proc/loadavg查看。 比如说uptime命令： 可以看到有三个值，这三个值分别表示：  前1分钟系统的平均负载 前5分钟系统的平均负载 前15分钟系统的平均负载   负载的含义 负载的含义是运行队列的平均长度。 具体而言，对于Linux系统，其统计了最近1分钟、最近5分钟、最近15分钟">
+<meta name="description" content="负载（Load Average）的查看、含义、多处理器、与CPU使用率的对比、多线程、计算方法以及Linux中的实现。">
 <meta name="keywords" content="操作系统">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linux系统中负载（Load Average）的含义与计算方法">
 <meta property="og:url" content="http://progrom.cn/2017/10/14/the-meaning-and-calculation-of-load-average/index.html">
 <meta property="og:site_name" content="尽人事，听天命">
-<meta property="og:description" content="负载的查看 在Linux系统中，使用uptime、w和top命令都可以查看负载，或者直接通过cat /proc/loadavg查看。 比如说uptime命令： 可以看到有三个值，这三个值分别表示：  前1分钟系统的平均负载 前5分钟系统的平均负载 前15分钟系统的平均负载   负载的含义 负载的含义是运行队列的平均长度。 具体而言，对于Linux系统，其统计了最近1分钟、最近5分钟、最近15分钟">
-<meta property="og:updated_time" content="2017-10-14T12:44:02.486Z">
+<meta property="og:description" content="负载（Load Average）的查看、含义、多处理器、与CPU使用率的对比、多线程、计算方法以及Linux中的实现。">
+<meta property="og:updated_time" content="2017-10-14T12:49:41.867Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Linux系统中负载（Load Average）的含义与计算方法">
-<meta name="twitter:description" content="负载的查看 在Linux系统中，使用uptime、w和top命令都可以查看负载，或者直接通过cat /proc/loadavg查看。 比如说uptime命令： 可以看到有三个值，这三个值分别表示：  前1分钟系统的平均负载 前5分钟系统的平均负载 前15分钟系统的平均负载   负载的含义 负载的含义是运行队列的平均长度。 具体而言，对于Linux系统，其统计了最近1分钟、最近5分钟、最近15分钟">
+<meta name="twitter:description" content="负载（Load Average）的查看、含义、多处理器、与CPU使用率的对比、多线程、计算方法以及Linux中的实现。">
 
 
 
@@ -373,6 +373,10 @@
           
 
           
+              <div class="post-description">
+                  负载（Load Average）的查看、含义、多处理器、与CPU使用率的对比、多线程、计算方法以及Linux中的实现。
+              </div>
+          
 
         </div>
       </header>
@@ -386,8 +390,7 @@
 
       
         <hr>
-<h2 id="负载的查看">负载的查看</h2>
-<p>在Linux系统中，使用<code>uptime</code>、<code>w</code>和<code>top</code>命令都可以查看负载，或者直接通过<code>cat /proc/loadavg</code>查看。</p>
+<h2 id="负载的查看"><a href="#负载的查看" class="headerlink" title="负载的查看"></a>负载的查看</h2><p>在Linux系统中，使用<code>uptime</code>、<code>w</code>和<code>top</code>命令都可以查看负载，或者直接通过<code>cat /proc/loadavg</code>查看。</p>
 <p>比如说<code>uptime</code>命令：</p>
 <p>可以看到有三个值，这三个值分别表示：</p>
 <ol>
@@ -396,8 +399,7 @@
 <li>前15分钟系统的平均负载</li>
 </ol>
 <hr>
-<h2 id="负载的含义">负载的含义</h2>
-<p>负载的含义是<code>运行队列的平均长度</code>。</p>
+<h2 id="负载的含义"><a href="#负载的含义" class="headerlink" title="负载的含义"></a>负载的含义</h2><p>负载的含义是<code>运行队列的平均长度</code>。</p>
 <p>具体而言，对于Linux系统，其统计了最近1分钟、最近5分钟、最近15分钟处于<code>running</code>或者<code>uninterruptible sleep</code>状态的进程数。</p>
 <p>文末参考资料里给出了一个车道的例子进行类比，这儿就不赘述了。举几个例子：</p>
 <ul>
@@ -406,24 +408,19 @@
 <li>负载为2，则表示负载过大，有一半的任务在等待CPU执行</li>
 </ul>
 <p>一般认为负载为0.7是警戒线。</p>
-<h3 id="负载与多处理器">负载与多处理器</h3>
-<p>对于多处理器，相当于多车道。比如对于双处理器，那么负载为2才算满。
-可以简单地将负载除以CPU核心数换算成单处理的情况。</p>
-<h3 id="负载与cpu使用率">负载与CPU使用率</h3>
-<p>文末参考资料中提到：</p>
+<h3 id="负载与多处理器"><a href="#负载与多处理器" class="headerlink" title="负载与多处理器"></a>负载与多处理器</h3><p>对于多处理器，相当于多车道。比如对于双处理器，那么负载为2才算满。<br>可以简单地将负载除以CPU核心数换算成单处理的情况。</p>
+<h3 id="负载与cpu使用率"><a href="#负载与CPU使用率" class="headerlink" title="负载与CPU使用率"></a>负载与CPU使用率</h3><p>文末参考资料中提到：</p>
 <blockquote>
-<p>The CPU percentage shows us how much the cars are using the freeway, but the load averages show us the whole picture, including pent-up demand.</p>
+<p>The CPU percentage shows us how much the cars are using the freeway, but the load averages show us the whole picture, including pent-up demand. </p>
 </blockquote>
 <p>相比于CPU使用率，负载可能展示更多的信息，即CPU的需求量。</p>
-<h3 id="负载和多线程">负载和多线程</h3>
-<p><code>Wikipedia</code>提到在不同的Unix系统中多线程负载的计算方式有很多种，比如线程与核实体间不同的模型就有所不同。而在Linux系统中每个线程应该都是独立计算的。</p>
+<h3 id="负载和多线程"><a href="#负载和多线程" class="headerlink" title="负载和多线程"></a>负载和多线程</h3><p><code>Wikipedia</code>提到在不同的Unix系统中多线程负载的计算方式有很多种，比如线程与核实体间不同的模型就有所不同。而在Linux系统中每个线程应该都是独立计算的。</p>
 <hr>
-<h2 id="负载的计算">负载的计算</h2>
-<p><strong>我并不了解统计学等知识，以下只是个人一些粗浅的理解。</strong></p>
+<h2 id="负载的计算"><a href="#负载的计算" class="headerlink" title="负载的计算"></a>负载的计算</h2><p><strong>我并不了解统计学等知识，以下只是个人一些粗浅的理解。</strong></p>
 <p>负载计算原理是统计学的<code>EWMA</code>（<code>Exponentially Damped/Weighted Moving Average</code>），利用指数衰减函数递推出当前序列平均值。</p>
 <p><code>Wikipedia</code>里提到：</p>
 <blockquote>
-<p>Hence, the 1-minute load average consists of 63% (more precisely: 1 - 1/e) of the load from the last minute and 37% (1/e) of the average load since start up, excluding the last minute. For the 5- and 15-minute load averages, the same 63%/37% ratio is computed over 5 minutes and 15 minutes respectively. Therefore, it's not technically accurate that the 1-minute load average only includes the last 60 seconds of activity (it actually includes 37% of the activity from the past), but it is correct to state that it includes mostly the last minute.</p>
+<p>Hence, the 1-minute load average consists of 63% (more precisely: 1 - 1/e) of the load from the last minute and 37% (1/e) of the average load since start up, excluding the last minute. For the 5- and 15-minute load averages, the same 63%/37% ratio is computed over 5 minutes and 15 minutes respectively. Therefore, it’s not technically accurate that the 1-minute load average only includes the last 60 seconds of activity (it actually includes 37% of the activity from the past), but it is correct to state that it includes mostly the last minute.</p>
 </blockquote>
 <p>即统计计算出一段时间的负载，其本质是计算均值。比如说：</p>
 <blockquote>
@@ -433,30 +430,23 @@
 <li>假设可以得到——近x分钟的运行的任务数为：$n_x$</li>
 </ul>
 </blockquote>
-<p>那么
-$$la_{-x} = la_{+x} \times (e^{-1}) \ + \  n_x \times (1-e^{-1})$$
-即
-$$la_{-x} = la_{+x} \times 37% \ + \  n_x \times 63%$$</p>
+<p>那么<br>$$la<em>{-x} = la</em>{+x} \times (e^{-1}) \ + \  n<em>x \times (1-e^{-1})$$<br>即<br>$$la</em>{-x} = la_{+x} \times 37\% \ + \  n_x \times 63\%$$</p>
 <p>可以看出$x$分钟前的负载权重是比较小的，随着时间的推移前面的信息影响会越来越小，直到趋近于0，最近时间的信息影响的比重比较大。</p>
 <p>而在Linux系统中，是每间隔$5HZ$或者$5秒$统计一次运行的任务数，然后计算均值。那么随着时间推移，可以得出这么一个序列：</p>
-<p>$$n_1, n_2, n_3, ..., n_{t-1}, n_t$$</p>
-<p>当前时刻$t$的<code>Moving Average</code>——$mv_t$同样根据$mv_{t-1}$计算出：</p>
-<p>$$mv_t = mv_{t-1} \times (e^{-\lambda}) + n_t \times (1-e^{-\lambda})$$</p>
+<p>$$n_1, n_2, n<em>3, …, n</em>{t-1}, n_t$$</p>
+<p>当前时刻$t$的<code>Moving Average</code>——$mv<em>t$同样根据$mv</em>{t-1}$计算出：</p>
+<p>$$mv<em>t = mv</em>{t-1} \times (e^{-\lambda}) + n_t \times (1-e^{-\lambda})$$</p>
 <p>对于要统计最近1分钟（60秒）的均值，由于时间间隔为5秒，那么$\lambda$的取值应为$\frac 5{60}$；同理，最近5分钟（300秒）的均值，$\lambda$的取值应为$\frac 5{300}$；最近15分钟（900秒）的均值，$\lambda$的取值应为$\frac 5{900}$。</p>
 <p>下面来看看Linux中如何实现负载的计算。</p>
 <hr>
-<h2 id="负载计算的实现">负载计算的实现</h2>
-<p>Linux内核中维护了一个<code>Jiffies</code>变量，记录自开机一开经历的Tick数，每次更新<code>Jiffies</code>时系统会调用<code>timer.c</code>中的<code>do_timer()</code>；
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> avenrun[<span class="number">3</span>];</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">calc_load</span><span class="params">(<span class="keyword">unsigned</span> <span class="keyword">long</span> ticks)</span></span></div><div class="line">&#123;</div><div class="line">	<span class="keyword">unsigned</span> <span class="keyword">long</span> active_tasks; <span class="comment">/* fixed-point */</span></div><div class="line">	<span class="keyword">static</span> <span class="keyword">int</span> count = LOAD_FREQ;</div><div class="line"></div><div class="line">	count -= ticks;</div><div class="line">	<span class="keyword">if</span> (count &lt; <span class="number">0</span>) &#123;</div><div class="line">		count += LOAD_FREQ;</div><div class="line">		active_tasks = count_active_tasks();</div><div class="line">		CALC_LOAD(avenrun[<span class="number">0</span>], EXP_1, active_tasks);</div><div class="line">		CALC_LOAD(avenrun[<span class="number">1</span>], EXP_5, active_tasks);</div><div class="line">		CALC_LOAD(avenrun[<span class="number">2</span>], EXP_15, active_tasks);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
-<p>在<code>sched.h</code>中可以看到上面<code>calc_load()</code>里一些变量、宏的定义：
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">extern</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> avenrun[];	<span class="comment">/* Load averages */</span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> FSHIFT   11		<span class="comment">/* nr of bits of precision */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> FIXED_1  (1&lt;&lt;FSHIFT)	<span class="comment">/* 1.0 as fixed-point */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> LOAD_FREQ (5*HZ)	<span class="comment">/* 5 sec intervals */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> EXP_1  1884		<span class="comment">/* 1/exp(5sec/1min) as fixed-point */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> EXP_5  2014		<span class="comment">/* 1/exp(5sec/5min) */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> EXP_15 2037		<span class="comment">/* 1/exp(5sec/15min) */</span></span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> CALC_LOAD(load,exp,n) \</span></div><div class="line">	load *= exp; \</div><div class="line">	load += n*(FIXED_1-exp); \</div><div class="line">	load &gt;&gt;= FSHIFT;</div></pre></td></tr></table></figure></p>
+<h2 id="负载计算的实现"><a href="#负载计算的实现" class="headerlink" title="负载计算的实现"></a>负载计算的实现</h2><p>Linux内核中维护了一个<code>Jiffies</code>变量，记录自开机一开经历的Tick数，每次更新<code>Jiffies</code>时系统会调用<code>timer.c</code>中的<code>do_timer()</code>；<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">unsigned</span> <span class="keyword">long</span> avenrun[<span class="number">3</span>];</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">void</span> <span class="title">calc_load</span><span class="params">(<span class="keyword">unsigned</span> <span class="keyword">long</span> ticks)</span></span></div><div class="line">&#123;</div><div class="line">	<span class="keyword">unsigned</span> <span class="keyword">long</span> active_tasks; <span class="comment">/* fixed-point */</span></div><div class="line">	<span class="keyword">static</span> <span class="keyword">int</span> count = LOAD_FREQ;</div><div class="line"></div><div class="line">	count -= ticks;</div><div class="line">	<span class="keyword">if</span> (count &lt; <span class="number">0</span>) &#123;</div><div class="line">		count += LOAD_FREQ;</div><div class="line">		active_tasks = count_active_tasks();</div><div class="line">		CALC_LOAD(avenrun[<span class="number">0</span>], EXP_1, active_tasks);</div><div class="line">		CALC_LOAD(avenrun[<span class="number">1</span>], EXP_5, active_tasks);</div><div class="line">		CALC_LOAD(avenrun[<span class="number">2</span>], EXP_15, active_tasks);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>在<code>sched.h</code>中可以看到上面<code>calc_load()</code>里一些变量、宏的定义：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">extern</span> <span class="keyword">unsigned</span> <span class="keyword">long</span> avenrun[];	<span class="comment">/* Load averages */</span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> FSHIFT   11		<span class="comment">/* nr of bits of precision */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> FIXED_1  (1&lt;&lt;FSHIFT)	<span class="comment">/* 1.0 as fixed-point */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> LOAD_FREQ (5*HZ)	<span class="comment">/* 5 sec intervals */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> EXP_1  1884		<span class="comment">/* 1/exp(5sec/1min) as fixed-point */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> EXP_5  2014		<span class="comment">/* 1/exp(5sec/5min) */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> EXP_15 2037		<span class="comment">/* 1/exp(5sec/15min) */</span></span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> CALC_LOAD(load,exp,n) \</span></div><div class="line">	load *= exp; \</div><div class="line">	load += n*(FIXED_1-exp); \</div><div class="line">	load &gt;&gt;= FSHIFT;</div></pre></td></tr></table></figure></p>
 <p>可以看到，每次<code>Jiffies+1</code>时调用<code>calc_load()</code>，并不会马上统计计算负载信息，而是等到一个<code>LOAD_FREQ</code>的周期结束，随后又开始新的<code>LOAD_FREQ</code>周期；</p>
 <p>通过调用<code>count_active_tasks()</code>可以获得处于<code>running</code>或者<code>uninterruptible sleep</code>状态的进程数；</p>
 <p>最后执行三次的<code>CALC_LOAD</code>，分别更新统计的1分钟、5分钟和15分钟的负载信息。</p>
 <p>值得一提的就是<code>CALC_LOAD</code>的实现，其本质是将上面的<code>Moving Average</code>计算的式子乘以$2^{11}$，最后再除以$2^{11}$，采用位运算并且避免了浮点数运算，提高了计算效率。</p>
 <hr>
-<h2 id="参考资料">参考资料</h2>
-<blockquote>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><blockquote>
 <ol>
 <li><a href="https://yq.aliyun.com/articles/41856" title="理解 Linux 的处理器负载均值" target="_blank" rel="external">https://yq.aliyun.com/articles/41856</a></li>
 <li><a href="http://en.wikipedia.org/wiki/Load_%28computing%29" title="Wikipedia" target="_blank" rel="external">http://en.wikipedia.org/wiki/Load_%28computing%29</a></li>
@@ -986,7 +976,7 @@ $$la_{-x} = la_{+x} \times 37% \ + \  n_x \times 63%$$</p>
         }
       });
     </script>
-    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
   
 
 
