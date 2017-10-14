@@ -393,7 +393,9 @@
 
       
         <hr>
-<h2 id="inode和block"><a href="#Inode和Block" class="headerlink" title="Inode和Block"></a>Inode和Block</h2><p>在Linux系统里“一切皆文件”，文件存储于文件系统。Linux文件系统里包含了两个基本的区块inode和block。这儿搬运一下《鸟哥Linux私房菜》里的图：<br><img src="http://cn.linux.vbird.org/linux_basic/0230filesystem_files/inode.jpg" alt="inode" title="inode"></p>
+<h2 id="inode和block">Inode和Block</h2>
+<p>在Linux系统里“一切皆文件”，文件存储于文件系统。Linux文件系统里包含了两个基本的区块inode和block。这儿搬运一下《鸟哥Linux私房菜》里的图：
+<img src="http://cn.linux.vbird.org/linux_basic/0230filesystem_files/inode.jpg" alt="inode" title="inode"></p>
 <p>简而言之：</p>
 <blockquote>
 <ul>
@@ -405,9 +407,10 @@
 <p>值得一提的还有，多个不同文件可以指向同一个inode，表面上这些文件的绝对路径是不同，但其本质是一体的，这就是<strong>硬链接</strong>。不过目录不能做硬链接，我的理解是如果目录可以做硬链接，这样就能构造出一个循环的目录路径，系统在挂载文件系统的时候不能很好的处理，所以就禁止目录做硬链接。</p>
 <p>不妨就把inode当作文件的本身，而inode指向的block存放文件的内容。</p>
 <hr>
-<h2 id="file-descriptor-和-open-file-description"><a href="#File-Descriptor-和-Open-File-Description" class="headerlink" title="File Descriptor 和 Open File Description"></a>File Descriptor 和 Open File Description</h2><p>对文件的基本操作有<code>open(2)</code>和<code>close(2)</code>这两个系统调用函数。</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">open</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *pathname, <span class="keyword">int</span> flags)</span></span>;</div></pre></td></tr></table></figure>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">close</span><span class="params">(<span class="keyword">int</span> fd)</span></span>;</div></pre></td></tr></table></figure>
+<h2 id="file-descriptor-和-open-file-description">File Descriptor 和 Open File Description</h2>
+<p>对文件的基本操作有<code>open(2)</code>和<code>close(2)</code>这两个系统调用函数。</p>
+<p><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">open</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *pathname, <span class="keyword">int</span> flags)</span></span>;</div></pre></td></tr></table></figure></p>
+<p><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">close</span><span class="params">(<span class="keyword">int</span> fd)</span></span>;</div></pre></td></tr></table></figure></p>
 <p><code>open()</code>函数打开一个文件并返回一个文件描述符（file descriptor），而<code>close()</code>函数则用来关闭指定的文件描述符。从一个整体的角度去看，文件描述符就表示了被打开的那个文件，指向了文件的inode。</p>
 <p>事实上，在<strong>man page</strong>里对于<code>open()</code>和<code>close()</code>函数的描述里除了提到了<code>file descriptor</code>，还提到了一个叫<code>open file description</code>的名词。为了方便观看，下面的描述中将<code>file descriptor</code>简称为<strong>FD</strong>，而<code>open file description</code>简称为<strong>OFD</strong>。</p>
 <blockquote>
@@ -418,9 +421,12 @@
 </ul>
 </blockquote>
 <p>于是乎，进程调用<code>open()</code>打开一个文件，在进程内维护的是<code>file descriptor</code>这一项，其指向系统内核维护的<code>open file description</code>项，而该项又指向文件系统的<code>inode</code>。</p>
-<p>另外呢，观察进程打开的文件描述符可以用如下命令；<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">ls -l /proc/PID/fd/    <span class="comment"># 列出进程号为PID的进程打开的文件描述符</span></div><div class="line">ls -l /proc/self/fd/   <span class="comment"># 列出当前进程打开的文件描述符</span></div><div class="line">ls -l /dev/fd/         <span class="comment"># 同上，这是一个指向上面那个目录的符号链接</span></div></pre></td></tr></table></figure></p>
+<p>另外呢，观察进程打开的文件描述符可以用如下命令；
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">ls -l /proc/PID/fd/    <span class="comment"># 列出进程号为PID的进程打开的文件描述符</span></div><div class="line">ls -l /proc/self/fd/   <span class="comment"># 列出当前进程打开的文件描述符</span></div><div class="line">ls -l /dev/fd/         <span class="comment"># 同上，这是一个指向上面那个目录的符号链接</span></div></pre></td></tr></table></figure></p>
 <hr>
-<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>这四者的关系从整体上可以用这张图来表示（参考自APUE）：<br><img src="http://ot423lspj.bkt.clouddn.com/20170715_file_00.png" alt="File Descriptor-&gt;Open File Description-&gt;Inode-&gt;Block" title="File Descriptor-&gt;Open File Description-&gt;Inode-&gt;Block"></p>
+<h2 id="最后">最后</h2>
+<p>这四者的关系从整体上可以用这张图来表示（参考自APUE）：
+<img src="http://ot423lspj.bkt.clouddn.com/20170715_file_00.png" alt="File Descriptor-&amp;gt;Open File Description-&amp;gt;Inode-&amp;gt;Block" title="File Descriptor-&gt;Open File Description-&gt;Inode-&gt;Block"></p>
 
       
     </div>
